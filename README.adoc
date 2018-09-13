@@ -1,0 +1,3 @@
+= de.tototec.utils.jface.viewer
+
+Utility classes to work with SWT/JFace Viewer API
