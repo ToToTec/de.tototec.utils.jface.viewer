@@ -25,7 +25,7 @@ Model(
         extensions = true
       ),
       Plugin(
-        gav = "io.github.zlika" % "reproducible-build-maven-plugin" % "0.6",
+        gav = "io.github.zlika" % "reproducible-build-maven-plugin" % "0.7",
         executions = Seq(
           Execution(
             goals = Seq("strip-jar")
