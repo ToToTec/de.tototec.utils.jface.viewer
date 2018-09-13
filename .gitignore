@@ -1,0 +1,11 @@
+# Build output
+target/
+
+# Maven
+.mvn.polyglot/
+pom.xml
+
+# Eclipse
+.project
+.classpath
+.settings/
