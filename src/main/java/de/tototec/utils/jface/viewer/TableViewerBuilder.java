@@ -3,6 +3,7 @@ package de.tototec.utils.jface.viewer;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import org.eclipse.jface.viewers.ColumnViewerEditor;
 import org.eclipse.jface.viewers.ColumnViewerEditorActivationEvent;
@@ -13,6 +14,8 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerEditor;
 import org.eclipse.jface.viewers.TableViewerFocusCellManager;
 import org.eclipse.jface.viewers.ViewerFilter;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.TableColumn;
 
 /**
@@ -28,6 +31,7 @@ public class TableViewerBuilder<T> {
 	private Boolean resizable;
 	private Boolean moveable;
 	private boolean withTableLayout;
+	private Function<RGB, Color> colorProvider;
 
 	public TableViewerBuilder() {
 	}
@@ -56,17 +60,24 @@ public class TableViewerBuilder<T> {
 	/**
 	 * Features flags are:
 	 * <ul>
-	 * <li> {@link ColumnViewerEditor#DEFAULT} - Tabbing from cell to cell is turned off</li>
-	 * <li> {@link ColumnViewerEditor#KEEP_EDITOR_ON_DOUBLE_CLICK} - Style mask used to turn <strong>off</strong> the
+	 * <li>{@link ColumnViewerEditor#DEFAULT} - Tabbing from cell to cell is
+	 * turned off</li>
+	 * <li>{@link ColumnViewerEditor#KEEP_EDITOR_ON_DOUBLE_CLICK} - Style mask
+	 * used to turn <strong>off</strong> the
 	 * feature that an editor activation is canceled on double click.</li>
-	 * <li> {@link ColumnViewerEditor#KEYBOARD_ACTIVATION} - Style mask used to enable keyboard activation.</li>
-	 * <li> {@link ColumnViewerEditor#TABBING_CYCLE_IN_ROW} - Should if the end of the row is reach started from the
+	 * <li>{@link ColumnViewerEditor#KEYBOARD_ACTIVATION} - Style mask used to
+	 * enable keyboard activation.</li>
+	 * <li>{@link ColumnViewerEditor#TABBING_CYCLE_IN_ROW} - Should if the end
+	 * of the row is reach started from the
 	 * beginning in the same row.</li>
-	 * <li> {@link ColumnViewerEditor#TABBING_HORIZONTAL} - Should tabbing from column to column with in one row be
+	 * <li>{@link ColumnViewerEditor#TABBING_HORIZONTAL} - Should tabbing from
+	 * column to column with in one row be
 	 * supported.</li>
-	 * <li> {@link ColumnViewerEditor#TABBING_MOVE_TO_ROW_NEIGHBOR} - Should if the end of the row is reach started from
+	 * <li>{@link ColumnViewerEditor#TABBING_MOVE_TO_ROW_NEIGHBOR} - Should if
+	 * the end of the row is reach started from
 	 * the start/end of the row below/above.</li>
-	 * <li> {@link ColumnViewerEditor#TABBING_VERTICAL} - Support tabbing to Cell above/below the current cell.</li>
+	 * <li>{@link ColumnViewerEditor#TABBING_VERTICAL} - Support tabbing to Cell
+	 * above/below the current cell.</li>
 	 * </ul>
 	 *
 	 *
@@ -105,7 +116,15 @@ public class TableViewerBuilder<T> {
 		return colBuilder;
 	}
 
+	public TableViewerBuilder<T> setColorProvider(final Function<RGB, Color> colorProvider) {
+		this.colorProvider = colorProvider;
+		return this;
+	}
+
 	public TableViewer apply(final TableViewer tableViewer) {
+		if (colorProvider == null) {
+			colorProvider = new ColorProvider(tableViewer.getControl());
+		}
 
 		if (withTableLayout) {
 			tableViewer.getTable().setLayout(new TableLayout());
@@ -113,6 +132,7 @@ public class TableViewerBuilder<T> {
 
 		if (columnBuilders != null) {
 			for (final ViewerColumnBuilder<T> columnBuilder : columnBuilders) {
+				columnBuilder.setColorProvider(colorProvider);
 				columnBuilder.build(tableViewer);
 			}
 		}

@@ -20,6 +20,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.RGB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,22 +35,16 @@ public class ViewerColumnBuilder<T> {
 	private String header;
 	private String headerTooltip;
 	private Integer width;
-
 	private ColumnLabelProvider columnLabelProvider;
-
 	private Function<T, String> labelFunction;
-
 	private EditingSupportBuilder<T, ?> editingSupportBuilder;
-
 	private Boolean resizable;
-
 	private Boolean moveable;
-
 	private Integer layoutWeight;
-
 	private Integer layoutWidth;
-
-	private BiFunction<Object, Color, Color> backgroudColorDecorator;
+	private BiFunction<T, RGB, RGB> backgroudColorDecorator;
+	private BiFunction<T, RGB, RGB> foregroudColorDecorator;
+	private Function<RGB, Color> colorProvider;
 
 	public ViewerColumnBuilder<T> setStyle(final int style) {
 		this.style = style;
@@ -107,13 +102,19 @@ public class ViewerColumnBuilder<T> {
 		return this;
 	}
 
-	public ViewerColumnBuilder<T> backgroundColorDecorator(
-			final BiFunction<Object, Color, Color> backgroudColorDecorator) {
+	public ViewerColumnBuilder<T> setForegroundColorDecorator(
+			final BiFunction<T, RGB, RGB> foregroudColorDecorator) {
+		this.foregroudColorDecorator = foregroudColorDecorator;
+		return this;
+	}
+
+	public ViewerColumnBuilder<T> setBackgroundColorDecorator(
+			final BiFunction<T, RGB, RGB> backgroudColorDecorator) {
 		this.backgroudColorDecorator = backgroudColorDecorator;
 		return this;
 	}
 
-	protected CellLabelProvider createLabelProvider() {
+	protected CellLabelProvider createLabelProvider(final Function<RGB, Color> colorProvider) {
 		final ColumnLabelProvider labelProvider;
 		if (columnLabelProvider != null) {
 			labelProvider = columnLabelProvider;
@@ -140,16 +141,19 @@ public class ViewerColumnBuilder<T> {
 			};
 		}
 
-		if (backgroudColorDecorator != null) {
+		if (backgroudColorDecorator != null || foregroudColorDecorator != null) {
 			class Deco extends ColumnLabelProvider implements IColorProvider {
 				private final ColumnLabelProvider labelProvider;
-				private final Optional<BiFunction<Object, Color, Color>> background;
+				private final Optional<BiFunction<T, RGB, RGB>> background;
+				private final Optional<BiFunction<T, RGB, RGB>> foreground;
 
 				public Deco(
 						final ColumnLabelProvider labelProvider,
-						final Optional<BiFunction<Object, Color, Color>> background) {
+						final Optional<BiFunction<T, RGB, RGB>> background,
+						final Optional<BiFunction<T, RGB, RGB>> foreground) {
 					this.labelProvider = labelProvider;
 					this.background = background;
+					this.foreground = foreground;
 				}
 
 				@Override
@@ -215,21 +219,47 @@ public class ViewerColumnBuilder<T> {
 				@Override
 				public Color getBackground(final Object element) {
 					final Color baseColor = labelProvider.getBackground(element);
-					if (background.isPresent()) {
-						return background.get().apply(element, baseColor);
+					try {
+						if (background.isPresent()) {
+							final RGB baseRgb = baseColor == null ? null : baseColor.getRGB();
+							final RGB rgb = background.get().apply((T) element, baseRgb);
+							return rgb == null ? null : colorProvider.apply(rgb);
+						}
+					} catch (final Exception e) {
+						log.error("Could not apply backgroudColorDecorator on element: {}", element, e);
+						return baseColor;
 					}
 					return baseColor;
 				}
 
 				@Override
 				public Color getForeground(final Object element) {
-					return labelProvider.getForeground(element);
+					final Color baseColor = labelProvider.getForeground(element);
+					try {
+						if (foreground.isPresent()) {
+							final RGB baseRgb = baseColor == null ? null : baseColor.getRGB();
+							final RGB rgb = foreground.get().apply((T) element, baseRgb);
+							return rgb == null ? null : colorProvider.apply(rgb);
+						}
+					} catch (final Exception e) {
+						log.error("Could not apply foregroudColorDecorator on element: {}", element, e);
+						return baseColor;
+					}
+					return baseColor;
 				}
 			}
-			return new Deco(labelProvider, Optional.of(backgroudColorDecorator));
+			return new Deco(
+					labelProvider,
+					Optional.ofNullable(backgroudColorDecorator),
+					Optional.ofNullable(foregroudColorDecorator));
 		}
 
 		return labelProvider;
+	}
+
+	public ViewerColumnBuilder<T> setColorProvider(final Function<RGB, Color> colorProvider) {
+		this.colorProvider = colorProvider;
+		return this;
 	}
 
 	public TableViewerColumn build(final TableViewer tableViewer) {
@@ -270,7 +300,7 @@ public class ViewerColumnBuilder<T> {
 			tableViewerColumn.getColumn().setMoveable(moveable.booleanValue());
 		}
 
-		tableViewerColumn.setLabelProvider(createLabelProvider());
+		tableViewerColumn.setLabelProvider(createLabelProvider(colorProvider));
 
 		if (editingSupportBuilder != null) {
 			try {
@@ -286,6 +316,10 @@ public class ViewerColumnBuilder<T> {
 
 	public TreeViewerColumn build(final TreeViewer treeViewer) {
 		final boolean hasTableLayout = treeViewer.getTree().getLayout() instanceof TableLayout;
+
+		if (colorProvider == null) {
+			colorProvider = new ColorProvider(treeViewer.getControl());
+		}
 
 		final TreeViewerColumn tableViewerColumn = new TreeViewerColumn(treeViewer, style);
 		if (header != null) {
@@ -325,7 +359,7 @@ public class ViewerColumnBuilder<T> {
 			tableViewerColumn.getColumn().setMoveable(moveable.booleanValue());
 		}
 
-		tableViewerColumn.setLabelProvider(createLabelProvider());
+		tableViewerColumn.setLabelProvider(createLabelProvider(colorProvider));
 
 		if (editingSupportBuilder != null) {
 			try {
