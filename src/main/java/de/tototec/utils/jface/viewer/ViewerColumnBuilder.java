@@ -1,5 +1,8 @@
 package de.tototec.utils.jface.viewer;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -21,6 +24,10 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
+import org.eclipse.swt.widgets.Item;
+import org.eclipse.swt.widgets.Layout;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TreeColumn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +41,7 @@ public class ViewerColumnBuilder<T> {
 	private int style;
 	private String header;
 	private String headerTooltip;
+	private Map<String, Object> dataMap = new LinkedHashMap<>();
 	private Integer width;
 	private ColumnLabelProvider columnLabelProvider;
 	private Function<T, String> labelFunction;
@@ -58,6 +66,11 @@ public class ViewerColumnBuilder<T> {
 
 	public ViewerColumnBuilder<T> setHeaderTooltip(final String headerTooltip) {
 		this.headerTooltip = headerTooltip;
+		return this;
+	}
+
+	public ViewerColumnBuilder<T> setData(final String dataKey, final Object dataValue) {
+		this.dataMap.put(dataKey, dataValue);
 		return this;
 	}
 
@@ -262,24 +275,35 @@ public class ViewerColumnBuilder<T> {
 		return this;
 	}
 
-	public TableViewerColumn build(final TableViewer tableViewer) {
-		final boolean hasTableLayout = tableViewer.getTable().getLayout() instanceof TableLayout;
+	protected void buildCommon(final Item column, final Layout layout) {
+		final boolean hasTableLayout = layout instanceof TableLayout;
+		final Optional<TableColumn> tableCol = column instanceof TableColumn ? Optional.of((TableColumn) column)
+				: Optional.empty();
+		final Optional<TreeColumn> treeCol = column instanceof TreeColumn ? Optional.of((TreeColumn) column)
+				: Optional.empty();
 
-		final TableViewerColumn tableViewerColumn = new TableViewerColumn(tableViewer, style);
 		if (header != null) {
-			tableViewerColumn.getColumn().setText(header);
+			column.setText(header);
 		}
 		if (headerTooltip != null) {
-			tableViewerColumn.getColumn().setToolTipText(headerTooltip);
+			tableCol.ifPresent(c -> c.setToolTipText(headerTooltip));
+			treeCol.ifPresent(c -> c.setToolTipText(headerTooltip));
+		}
+		if (dataMap != null) {
+			for (final Entry<String, Object> data : dataMap.entrySet()) {
+				column.setData(data.getKey(), data.getValue());
+			}
 		}
 		if (width != null && width >= 0) {
-			tableViewerColumn.getColumn().setWidth(width.intValue());
+			tableCol.ifPresent(c -> c.setWidth(width.intValue()));
+			treeCol.ifPresent(c -> c.setWidth(width.intValue()));
 		} else if (!hasTableLayout && layoutWidth != null && layoutWidth >= 0) {
-			tableViewerColumn.getColumn().setWidth(layoutWidth.intValue());
+			tableCol.ifPresent(c -> c.setWidth(layoutWidth.intValue()));
+			treeCol.ifPresent(c -> c.setWidth(layoutWidth.intValue()));
 		}
 
 		if (hasTableLayout) {
-			final TableLayout tableLayout = (TableLayout) tableViewer.getTable().getLayout();
+			final TableLayout tableLayout = (TableLayout) layout;
 			if (layoutWeight != null) {
 				if (layoutWidth != null) {
 					tableLayout.addColumnData(new ColumnWeightData(layoutWeight, layoutWidth));
@@ -289,16 +313,33 @@ public class ViewerColumnBuilder<T> {
 			} else if (layoutWidth != null) {
 				tableLayout.addColumnData(new ColumnPixelData(layoutWidth));
 			} else {
-				log.warn("Missing layout data but table has a layout.");
+				log.warn("Missing layout data but {} has a layout.", tableCol.isPresent() ? "table" : "tree");
+			}
+		} else {
+			if (layoutWeight != null || layoutWidth != null) {
+				log.warn("Missing table layout but column has some layout info.");
 			}
 		}
 
 		if (resizable != null) {
-			tableViewerColumn.getColumn().setResizable(resizable.booleanValue());
+			tableCol.ifPresent(c -> c.setResizable(resizable.booleanValue()));
+			treeCol.ifPresent(c -> c.setResizable(resizable.booleanValue()));
 		}
 		if (moveable != null) {
-			tableViewerColumn.getColumn().setMoveable(moveable.booleanValue());
+			tableCol.ifPresent(c -> c.setMoveable(moveable.booleanValue()));
+			treeCol.ifPresent(c -> c.setMoveable(moveable.booleanValue()));
 		}
+
+	}
+
+	public TableViewerColumn build(final TableViewer tableViewer) {
+		if (colorProvider == null) {
+			colorProvider = new ColorProvider(tableViewer.getControl());
+		}
+
+		final TableViewerColumn tableViewerColumn = new TableViewerColumn(tableViewer, style);
+
+		buildCommon(tableViewerColumn.getColumn(), tableViewer.getTable().getLayout());
 
 		tableViewerColumn.setLabelProvider(createLabelProvider(colorProvider));
 
@@ -315,49 +356,13 @@ public class ViewerColumnBuilder<T> {
 	}
 
 	public TreeViewerColumn build(final TreeViewer treeViewer) {
-		final boolean hasTableLayout = treeViewer.getTree().getLayout() instanceof TableLayout;
-
 		if (colorProvider == null) {
 			colorProvider = new ColorProvider(treeViewer.getControl());
 		}
 
 		final TreeViewerColumn tableViewerColumn = new TreeViewerColumn(treeViewer, style);
-		if (header != null) {
-			tableViewerColumn.getColumn().setText(header);
-		}
-		if (headerTooltip != null) {
-			tableViewerColumn.getColumn().setToolTipText(headerTooltip);
-		}
-		if (width != null && width >= 0) {
-			tableViewerColumn.getColumn().setWidth(width.intValue());
-		} else if (!hasTableLayout && layoutWidth != null && layoutWidth >= 0) {
-			tableViewerColumn.getColumn().setWidth(layoutWidth.intValue());
-		}
 
-		if (hasTableLayout) {
-			final TableLayout tableLayout = (TableLayout) treeViewer.getTree().getLayout();
-			if (layoutWeight != null) {
-				if (layoutWidth != null) {
-					tableLayout.addColumnData(new ColumnWeightData(layoutWeight, layoutWidth));
-				} else {
-					tableLayout.addColumnData(new ColumnWeightData(layoutWeight));
-				}
-			} else if (layoutWidth != null) {
-				tableLayout.addColumnData(new ColumnPixelData(layoutWidth));
-			} else {
-				log.warn("Missing layout data but tree has a table layout");
-			}
-		} else {
-			if (layoutWeight != null || layoutWidth != null) {
-				log.warn("Missing table layout but column has some layout info");
-			}
-		}
-		if (resizable != null) {
-			tableViewerColumn.getColumn().setResizable(resizable.booleanValue());
-		}
-		if (moveable != null) {
-			tableViewerColumn.getColumn().setMoveable(moveable.booleanValue());
-		}
+		buildCommon(tableViewerColumn.getColumn(), treeViewer.getTree().getLayout());
 
 		tableViewerColumn.setLabelProvider(createLabelProvider(colorProvider));
 

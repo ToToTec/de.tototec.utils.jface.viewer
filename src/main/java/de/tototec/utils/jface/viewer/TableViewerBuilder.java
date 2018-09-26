@@ -89,6 +89,10 @@ public class TableViewerBuilder<T> {
 		return this;
 	}
 
+	/**
+	 * If set to <code>true</code>, ensures only a cell is highlighted, and not
+	 * the full row.
+	 */
 	public TableViewerBuilder<T> setCellOwnerDrawHighlighter(final boolean ownerDrawHighlighter) {
 		this.ownerDrawHighlighter = ownerDrawHighlighter;
 		return this;
