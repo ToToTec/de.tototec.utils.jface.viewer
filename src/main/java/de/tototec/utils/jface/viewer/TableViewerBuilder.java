@@ -8,6 +8,7 @@ import java.util.function.Function;
 import org.eclipse.jface.viewers.ColumnViewerEditor;
 import org.eclipse.jface.viewers.ColumnViewerEditorActivationEvent;
 import org.eclipse.jface.viewers.ColumnViewerEditorActivationStrategy;
+import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.FocusCellOwnerDrawHighlighter;
 import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TableViewer;
@@ -134,11 +135,18 @@ public class TableViewerBuilder<T> {
 			tableViewer.getTable().setLayout(new TableLayout());
 		}
 
+		boolean toolTipSupport = false;
+
 		if (columnBuilders != null) {
 			for (final ViewerColumnBuilder<T> columnBuilder : columnBuilders) {
 				columnBuilder.setColorProvider(colorProvider);
+				toolTipSupport = toolTipSupport || columnBuilder.needsToolTipSupport();
 				columnBuilder.build(tableViewer);
 			}
+		}
+
+		if (toolTipSupport) {
+			ColumnViewerToolTipSupport.enableFor(tableViewer);
 		}
 
 		if (viewerFilters != null) {

@@ -12,7 +12,6 @@ import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnPixelData;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.EditingSupport;
-import org.eclipse.jface.viewers.IColorProvider;
 import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
@@ -20,9 +19,6 @@ import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.viewers.ViewerColumn;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Item;
 import org.eclipse.swt.widgets.Layout;
@@ -53,6 +49,7 @@ public class ViewerColumnBuilder<T> {
 	private BiFunction<T, RGB, RGB> backgroudColorDecorator;
 	private BiFunction<T, RGB, RGB> foregroudColorDecorator;
 	private Function<RGB, Color> colorProvider;
+	private BiFunction<T, String, String> toolTipDecorator;
 
 	public ViewerColumnBuilder<T> setStyle(final int style) {
 		this.style = style;
@@ -110,6 +107,11 @@ public class ViewerColumnBuilder<T> {
 		return this;
 	}
 
+	public ViewerColumnBuilder<T> setToolTipDecorator(final BiFunction<T, String, String> toolTipDecorator) {
+		this.toolTipDecorator = toolTipDecorator;
+		return this;
+	}
+
 	public ViewerColumnBuilder<T> setEditingSupportBuilder(final EditingSupportBuilder<T, ?> editingSupportBuilder) {
 		this.editingSupportBuilder = editingSupportBuilder;
 		return this;
@@ -154,120 +156,13 @@ public class ViewerColumnBuilder<T> {
 			};
 		}
 
-		if (backgroudColorDecorator != null || foregroudColorDecorator != null) {
-			class Deco extends ColumnLabelProvider implements IColorProvider {
-				private final ColumnLabelProvider labelProvider;
-				private final Optional<BiFunction<T, RGB, RGB>> background;
-				private final Optional<BiFunction<T, RGB, RGB>> foreground;
+		return new DecoratedLabelProvider<T>(
+				labelProvider,
+				colorProvider,
+				Optional.ofNullable(backgroudColorDecorator),
+				Optional.ofNullable(foregroudColorDecorator),
+				Optional.ofNullable(toolTipDecorator));
 
-				public Deco(
-						final ColumnLabelProvider labelProvider,
-						final Optional<BiFunction<T, RGB, RGB>> background,
-						final Optional<BiFunction<T, RGB, RGB>> foreground) {
-					this.labelProvider = labelProvider;
-					this.background = background;
-					this.foreground = foreground;
-				}
-
-				@Override
-				public String getText(final Object element) {
-					return labelProvider.getText(element);
-				}
-
-				@Override
-				public Image getImage(final Object element) {
-					return labelProvider.getImage(element);
-				}
-
-				@Override
-				public Color getToolTipBackgroundColor(final Object object) {
-					return labelProvider.getToolTipBackgroundColor(object);
-				}
-
-				@Override
-				public int getToolTipDisplayDelayTime(final Object object) {
-					return labelProvider.getToolTipDisplayDelayTime(object);
-				}
-
-				@Override
-				public Font getToolTipFont(final Object object) {
-					return labelProvider.getToolTipFont(object);
-				}
-
-				@Override
-				public Color getToolTipForegroundColor(final Object object) {
-					return labelProvider.getToolTipForegroundColor(object);
-				}
-
-				@Override
-				public Image getToolTipImage(final Object object) {
-					return labelProvider.getToolTipImage(object);
-				}
-
-				@Override
-				public Point getToolTipShift(final Object object) {
-					return labelProvider.getToolTipShift(object);
-				}
-
-				@Override
-				public int getToolTipStyle(final Object object) {
-					return labelProvider.getToolTipStyle(object);
-				}
-
-				@Override
-				public String getToolTipText(final Object element) {
-					return labelProvider.getToolTipText(element);
-				}
-
-				@Override
-				public int getToolTipTimeDisplayed(final Object object) {
-					return labelProvider.getToolTipTimeDisplayed(object);
-				}
-
-				@Override
-				public Font getFont(final Object element) {
-					return labelProvider.getFont(element);
-				}
-
-				@Override
-				public Color getBackground(final Object element) {
-					final Color baseColor = labelProvider.getBackground(element);
-					try {
-						if (background.isPresent()) {
-							final RGB baseRgb = baseColor == null ? null : baseColor.getRGB();
-							final RGB rgb = background.get().apply((T) element, baseRgb);
-							return rgb == null ? null : colorProvider.apply(rgb);
-						}
-					} catch (final Exception e) {
-						log.error("Could not apply backgroudColorDecorator on element: {}", element, e);
-						return baseColor;
-					}
-					return baseColor;
-				}
-
-				@Override
-				public Color getForeground(final Object element) {
-					final Color baseColor = labelProvider.getForeground(element);
-					try {
-						if (foreground.isPresent()) {
-							final RGB baseRgb = baseColor == null ? null : baseColor.getRGB();
-							final RGB rgb = foreground.get().apply((T) element, baseRgb);
-							return rgb == null ? null : colorProvider.apply(rgb);
-						}
-					} catch (final Exception e) {
-						log.error("Could not apply foregroudColorDecorator on element: {}", element, e);
-						return baseColor;
-					}
-					return baseColor;
-				}
-			}
-			return new Deco(
-					labelProvider,
-					Optional.ofNullable(backgroudColorDecorator),
-					Optional.ofNullable(foregroudColorDecorator));
-		}
-
-		return labelProvider;
 	}
 
 	public ViewerColumnBuilder<T> setColorProvider(final Function<RGB, Color> colorProvider) {
@@ -378,4 +273,7 @@ public class ViewerColumnBuilder<T> {
 		return tableViewerColumn;
 	}
 
+	public boolean needsToolTipSupport() {
+		return toolTipDecorator != null;
+	}
 }
