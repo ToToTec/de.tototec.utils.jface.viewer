@@ -9,3 +9,6 @@ pom.xml
 .project
 .classpath
 .settings/
+
+# Mill
+/out/
