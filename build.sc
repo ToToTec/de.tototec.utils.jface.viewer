@@ -3,7 +3,7 @@ import mill._
 import mill.scalalib._
 import mill.scalalib.publish._
 import ammonite.ops._
-import $ivy.`de.tototec::de.tobiasroeser.mill.osgi:0.0.2-SNAPSHOT`
+import $ivy.`de.tototec::de.tobiasroeser.mill.osgi:0.0.2`
 import de.tobiasroeser.mill.osgi._
 
 object viewer
@@ -41,8 +41,8 @@ object viewer
   def pomSettings = PomSettings(
     description = "Utility classes to work with SWT/JFace Viewer API",
     organization = "de.tototec",
-    url = "https://github.com/tototec/",
-    licenses = Seq(License.`Apache-2.0`.copy(url = "http://www.apache.org/licenses/LICENSE-2.0")),
+    url = "https://github.com/ToToTec/de.tototec.utils.jface.viewer",
+    licenses = Seq(License.`Apache-2.0`.copy(url = "https://www.apache.org/licenses/LICENSE-2.0")),
     versionControl = VersionControl.github("ToToTec", "de.tototec.utils.jface.viewer"),
     developers = Seq(Developer("lefou", "Tobias Roeser", "https://github.com/lefou"))
   )
