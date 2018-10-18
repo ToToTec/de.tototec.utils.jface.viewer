@@ -3,7 +3,7 @@ import mill._
 import mill.scalalib._
 import mill.scalalib.publish._
 import ammonite.ops._
-import $ivy.`de.tototec::de.tobiasroeser.mill.osgi:0.0.1`
+import $ivy.`de.tototec::de.tobiasroeser.mill.osgi:0.0.2-SNAPSHOT`
 import de.tobiasroeser.mill.osgi._
 
 object viewer
@@ -25,18 +25,18 @@ object viewer
     ivy"org.slf4j:slf4j-api:1.7.25"
   )
 
-  def bundleSymbolicName = artifactName()
-
   def osgiHeaders = T{
-    val orig = super.osgiHeaders()
-    orig.copy(
-    `Export-Package` = Seq(bundleSymbolicName()),
-    `Bundle-Description`= Option(pomSettings().description)
-  )}
+    super.osgiHeaders().copy(
+      `Export-Package` = Seq(bundleSymbolicName())
+    )
+  }
 
-  // def additionalHeaders = Map(
-  //   "-includeresource" -> (millSourcePath / "README.adoc").toString
-  // )
+  def includeResource = T{
+    super.includeResource() ++ Seq(
+      "README.adoc",
+      "LICENSE.txt"
+    )
+  }
 
   def includeSources = true
 
@@ -44,7 +44,7 @@ object viewer
     description = "Utility classes to work with SWT/JFace Viewer API",
     organization = "de.tototec",
     url = "https://github.com/tototec/",
-    licenses = Seq(License.`Apache-2.0`),
+    licenses = Seq(License.`Apache-2.0`.copy(url = "http://www.apache.org/licenses/LICENSE-2.0")),
     versionControl = VersionControl.github("ToToTec", "de.tototec.utils.jface.viewer"),
     developers = Seq(
       Developer("lefou", "Tobias Roeser", "https://github.com/lefou")
