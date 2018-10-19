@@ -62,9 +62,6 @@ public class TreeViewerBuilder<T> {
 	 * <ul>
 	 * <li>{@link ColumnViewerEditor#DEFAULT} - Tabbing from cell to cell is
 	 * turned off</li>
-	 * <li>{@link ColumnViewerEditor#KEEP_EDITOR_ON_DOUBLE_CLICK} - Style mask
-	 * used to turn <strong>off</strong> the
-	 * feature that an editor activation is canceled on double click.</li>
 	 * <li>{@link ColumnViewerEditor#KEYBOARD_ACTIVATION} - Style mask used to
 	 * enable keyboard activation.</li>
 	 * <li>{@link ColumnViewerEditor#TABBING_CYCLE_IN_ROW} - Should if the end
