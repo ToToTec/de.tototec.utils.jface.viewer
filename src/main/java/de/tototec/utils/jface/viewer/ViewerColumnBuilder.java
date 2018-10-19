@@ -7,8 +7,11 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import org.eclipse.jface.layout.TableColumnLayout;
+import org.eclipse.jface.layout.TreeColumnLayout;
 import org.eclipse.jface.viewers.CellLabelProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.ColumnLayoutData;
 import org.eclipse.jface.viewers.ColumnPixelData;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.EditingSupport;
@@ -149,19 +152,17 @@ public class ViewerColumnBuilder<T> {
 			};
 		} else {
 			labelProvider = new ColumnLabelProvider() {
+
 				@Override
 				public String getText(final Object element) {
 					return "";
 				}
+
 			};
 		}
 
-		return new DecoratedLabelProvider<T>(
-				labelProvider,
-				colorProvider,
-				Optional.ofNullable(backgroudColorDecorator),
-				Optional.ofNullable(foregroudColorDecorator),
-				Optional.ofNullable(toolTipDecorator));
+		return new DecoratedLabelProvider<T>(labelProvider, colorProvider, Optional.ofNullable(backgroudColorDecorator),
+				Optional.ofNullable(foregroudColorDecorator), Optional.ofNullable(toolTipDecorator));
 
 	}
 
@@ -170,8 +171,11 @@ public class ViewerColumnBuilder<T> {
 		return this;
 	}
 
-	protected void buildCommon(final Item column, final Layout layout) {
-		final boolean hasTableLayout = layout instanceof TableLayout;
+	protected void buildCommon(final Item column, final Layout layout, final Layout parentLayout) {
+		final boolean hasLayout = layout instanceof TableLayout ||
+				parentLayout instanceof TableColumnLayout ||
+				parentLayout instanceof TreeColumnLayout;
+
 		final Optional<TableColumn> tableCol = column instanceof TableColumn ? Optional.of((TableColumn) column)
 				: Optional.empty();
 		final Optional<TreeColumn> treeCol = column instanceof TreeColumn ? Optional.of((TreeColumn) column)
@@ -192,25 +196,39 @@ public class ViewerColumnBuilder<T> {
 		if (width != null && width >= 0) {
 			tableCol.ifPresent(c -> c.setWidth(width.intValue()));
 			treeCol.ifPresent(c -> c.setWidth(width.intValue()));
-		} else if (!hasTableLayout && layoutWidth != null && layoutWidth >= 0) {
+		} else if (!hasLayout && layoutWidth != null && layoutWidth >= 0) {
 			tableCol.ifPresent(c -> c.setWidth(layoutWidth.intValue()));
 			treeCol.ifPresent(c -> c.setWidth(layoutWidth.intValue()));
 		}
 
-		if (hasTableLayout) {
-			final TableLayout tableLayout = (TableLayout) layout;
+		if (hasLayout) {
+			// calc layout data
+			final ColumnLayoutData layoutData;
 			if (layoutWeight != null) {
 				if (layoutWidth != null) {
-					tableLayout.addColumnData(new ColumnWeightData(layoutWeight, layoutWidth));
+					layoutData = new ColumnWeightData(layoutWeight, layoutWidth);
 				} else {
-					tableLayout.addColumnData(new ColumnWeightData(layoutWeight));
+					layoutData = new ColumnWeightData(layoutWeight);
 				}
 			} else if (layoutWidth != null) {
-				tableLayout.addColumnData(new ColumnPixelData(layoutWidth));
+				layoutData = new ColumnPixelData(layoutWidth);
 			} else {
 				log.warn("Missing layout data but {} has a layout.", tableCol.isPresent() ? "table" : "tree");
+				layoutData = null;
 			}
-		} else {
+			// apply layout data
+			if (layoutData != null) {
+				if (layout instanceof TableLayout) {
+					((TableLayout) layout).addColumnData(layoutData);
+				} else if (parentLayout instanceof TableColumnLayout) {
+					((TableColumnLayout) parentLayout).setColumnData(column, layoutData);
+				} else if (parentLayout instanceof TreeColumnLayout) {
+					((TreeColumnLayout) parentLayout).setColumnData(column, layoutData);
+				}
+			}
+		} else
+
+		{
 			if (layoutWeight != null || layoutWidth != null) {
 				log.warn("Missing table layout but column has some layout info.");
 			}
@@ -234,7 +252,10 @@ public class ViewerColumnBuilder<T> {
 
 		final TableViewerColumn tableViewerColumn = new TableViewerColumn(tableViewer, style);
 
-		buildCommon(tableViewerColumn.getColumn(), tableViewer.getTable().getLayout());
+		buildCommon(
+				tableViewerColumn.getColumn(),
+				tableViewer.getTable().getLayout(),
+				tableViewer.getTable().getParent().getLayout());
 
 		tableViewerColumn.setLabelProvider(createLabelProvider(colorProvider));
 
@@ -257,7 +278,10 @@ public class ViewerColumnBuilder<T> {
 
 		final TreeViewerColumn tableViewerColumn = new TreeViewerColumn(treeViewer, style);
 
-		buildCommon(tableViewerColumn.getColumn(), treeViewer.getTree().getLayout());
+		buildCommon(
+				tableViewerColumn.getColumn(),
+				treeViewer.getTree().getLayout(),
+				treeViewer.getTree().getParent().getLayout());
 
 		tableViewerColumn.setLabelProvider(createLabelProvider(colorProvider));
 
