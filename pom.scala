@@ -2,7 +2,7 @@ import org.sonatype.maven.polyglot.scala.model._
 import scala.collection.immutable.Seq
 
 Model(
-  gav = "de.tototec" % "de.tototec.utils.jface.viewer" % "0.1.0-SNAPSHOT",
+  gav = "de.tototec" % "de.tototec.utils.jface.viewer" % "0.1.1-SNAPSHOT",
   description = "Utility classes to work with SWT/JFace Viewer API",
   packaging = "bundle",
   properties = Map(
