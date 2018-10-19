@@ -1,3 +1,9 @@
 = de.tototec.utils.jface.viewer
 
 Utility classes to work with SWT/JFace Viewer API
+
+== Changelog
+
+=== de.tototec.utils.jface.viewer-0.1.0 - 2018-10-19
+
+* Initial Release

@@ -7,14 +7,17 @@ import $ivy.`de.tototec::de.tobiasroeser.mill.osgi:0.0.2-SNAPSHOT`
 import de.tobiasroeser.mill.osgi._
 
 object viewer
-  extends MavenModule
+  extends JavaModule
   with OsgiBundleModule
   with PublishModule {
 
-  def millSourcePath = super.millSourcePath / up
+  def millSourcePath = super.millSourcePath / up / 'src /'main
+
+  def sources = T.sources(millSourcePath / 'java)
+  def resources = T.sources(millSourcePath / 'resources)
 
   def artifactName = "de.tototec.utils.jface.viewer"
-  def publishVersion = "0.1.0-SNAPSHOT"
+  def publishVersion = "0.1.0"
 
   def ivyDeps = Agg(
     ivy"org.eclipse:jface:3.3.0-I20070606-0010",
@@ -31,12 +34,7 @@ object viewer
     )
   }
 
-  def includeResource = T{
-    super.includeResource() ++ Seq(
-      "README.adoc",
-      "LICENSE.txt"
-    )
-  }
+  def includeResource = T{ super.includeResource() ++ Seq("README.adoc", "LICENSE.txt") }
 
   def includeSources = true
 
@@ -46,9 +44,7 @@ object viewer
     url = "https://github.com/tototec/",
     licenses = Seq(License.`Apache-2.0`.copy(url = "http://www.apache.org/licenses/LICENSE-2.0")),
     versionControl = VersionControl.github("ToToTec", "de.tototec.utils.jface.viewer"),
-    developers = Seq(
-      Developer("lefou", "Tobias Roeser", "https://github.com/lefou")
-    )
+    developers = Seq(Developer("lefou", "Tobias Roeser", "https://github.com/lefou"))
   )
 
 }
