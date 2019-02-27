@@ -4,9 +4,13 @@
 # You can give the required mill version with --mill-version parameter
 # If no version is given, it falls back to the value of DEFAULT_MILL_VERSION
 
-DEFAULT_MILL_VERSION=0.2.8
+DEFAULT_MILL_VERSION=0.3.6
 
 set -e
+
+if [ -f ".mill-version" ] ; then
+  MILL_VERSION="$(head -n 1 .mill-version 2> /dev/null)"
+fi
 
 if [ "x$1" = "x--mill-version" ] ; then
   shift

@@ -2,18 +2,18 @@
 import mill._
 import mill.scalalib._
 import mill.scalalib.publish._
-import ammonite.ops._
-import $ivy.`de.tototec::de.tobiasroeser.mill.osgi:0.0.2`
+import $ivy.`de.tototec::de.tobiasroeser.mill.osgi:0.0.6`
 import de.tobiasroeser.mill.osgi._
-import $ivy.`de.tototec::de.tobiasroeser.mill.publishM2:0.0.1`
+import $ivy.`de.tototec::de.tobiasroeser.mill.publishM2:0.1.0`
 import de.tobiasroeser.mill.publishM2._
+import mill.define.Target
 
 object viewer
   extends JavaModule
   with OsgiBundleModule
   with PublishM2Module {
 
-  def millSourcePath = super.millSourcePath / up / 'src /'main
+  def millSourcePath = super.millSourcePath / os.up / 'src / 'main
 
   def sources = T.sources(millSourcePath / 'java)
   def resources = T.sources(millSourcePath / 'resources)
@@ -30,13 +30,13 @@ object viewer
     ivy"org.slf4j:slf4j-api:1.7.25"
   )
 
-  def osgiHeaders = T{
+  def osgiHeaders = T {
     super.osgiHeaders().copy(
       `Export-Package` = Seq(bundleSymbolicName())
     )
   }
 
-  def includeResource = T{ super.includeResource() ++ Seq("README.adoc", "LICENSE.txt") }
+  def includeResource = T { super.includeResource() ++ Seq("README.adoc", "LICENSE.txt") }
 
   def includeSources = true
 
@@ -48,6 +48,14 @@ object viewer
     versionControl = VersionControl.github("ToToTec", "de.tototec.utils.jface.viewer"),
     developers = Seq(Developer("lefou", "Tobias Roeser", "https://github.com/lefou"))
   )
+
+  override def javacOptions: Target[Seq[String]] = T {
+    super.javacOptions() ++ Seq(
+      "-encoding", "UTF-8",
+      "-source", "8",
+      "-target", "8"
+    )
+  }
 
 }
 
