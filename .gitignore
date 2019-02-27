@@ -4,6 +4,7 @@ target/
 # Maven
 .mvn.polyglot/
 pom.xml
+/.mvn/maven.config
 
 # Eclipse
 .project
@@ -12,3 +13,7 @@ pom.xml
 
 # Mill
 /out/
+
+# Idea
+/.idea/
+/.idea_modules/
