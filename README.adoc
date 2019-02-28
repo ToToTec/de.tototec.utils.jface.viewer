@@ -4,7 +4,7 @@ Utility classes to work with SWT/JFace Viewer API
 
 == Changelog
 
-=== de.tototec.utils.jface.viewer-0.1.1-SNAPSHOT
+=== de.tototec.utils.jface.viewer-0.1.1 - 2019-02-28
 
 * Added support for TableColumnLayout
 

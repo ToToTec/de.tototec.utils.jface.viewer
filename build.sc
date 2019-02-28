@@ -19,7 +19,7 @@ object viewer
   def resources = T.sources(millSourcePath / 'resources)
 
   def artifactName = "de.tototec.utils.jface.viewer"
-  def publishVersion = "0.1.1-SNAPSHOT"
+  def publishVersion = "0.1.1"
 
   def ivyDeps = Agg(
     ivy"org.eclipse:jface:3.3.0-I20070606-0010",
